@@ -348,7 +348,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">HR Salary Calculator <span className="text-sm text-gray-400">v.1.0</span></h1>
+              <h1 className="text-3xl font-bold">HR Salary Calculator <span className="text-sm text-gray-400">v.1.27</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Download, Info, Moon, Sun } from 'lucide-react';
 
-const HRSalaryCalculator = () => {
+const App = () => {
   const [ctc, setCtc] = useState('');
   const [calculationType, setCalculationType] = useState('monthly');
   const [wageType, setWageType] = useState('SKILLED');
@@ -795,4 +795,4 @@ const HRSalaryCalculator = () => {
   );
 };
 
-export default App
+export default App;

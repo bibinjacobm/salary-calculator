@@ -181,7 +181,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>HR Salary Calculator <span style="font-size: 14px; color: #999;">v.1.0</span></h1>
+          <h1>HR Salary Calculator <span style="font-size: 14px; color: #999;">v.1.27</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">

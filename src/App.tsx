@@ -44,11 +44,11 @@ const App = () => {
     
     // Iterate to get accurate gross
     for (let i = 0; i < 10; i++) {
-      const pfBase = gross - (gross * 0.5 * 0.3); // Gross - HRA
+      const pfBase = gross - (gross * 0.5 * 0.4); // Gross - HRA (40% of Basic)
       const employerPF = Math.min(pfBase * 0.12, 1800);
       const employerESI = gross <= 21000 ? gross * 0.0325 : 0;
-      const epfAdminCharges = gross * 0.005;
-      const dli = gross * 0.005;
+      const epfAdminCharges = Math.min(gross * 0.005, 75);
+      const dli = Math.min(gross * 0.005, 75);
       const totalEmployerCost = employerPF + employerESI + epfAdminCharges + dli;
       gross = monthlyCTC - totalEmployerCost;
     }
@@ -84,9 +84,9 @@ const App = () => {
       employeeESI = gross * 0.0075;
     }
     
-    // 8. EPF Admin Charges & DLI = 0.5% of Gross each
-    const epfAdminCharges = gross * 0.005;
-    const dli = gross * 0.005;
+    // 8. EPF Admin Charges & DLI = 0.5% of Gross each (capped at ₹75)
+    const epfAdminCharges = Math.min(gross * 0.005, 75);
+    const dli = Math.min(gross * 0.005, 75);
     
     // 9. Net In-Hand Salary
     const netInHand = gross - (employeePF + employeeESI);
@@ -122,6 +122,8 @@ const App = () => {
         esiExceeded: gross > 21000,
         pfCapped: pfBase * 0.12 > 1800,
         taCapped: taCalculated > 1600,
+        epfAdminCapped: gross * 0.005 > 75,
+        dliCapped: gross * 0.005 > 75,
         basicTooLow: basic < (gross * 0.5),
         basicTooHigh: basic > (gross * 0.5),
         hraIncorrect: hra !== (basic * 0.4), // HRA should be 40% for non-metro (Jammu)
@@ -181,7 +183,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v.1.27</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.33</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -348,7 +350,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v.1.27</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.33</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -484,6 +486,18 @@ const App = () => {
                 <div className="flex items-start gap-2 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <span>Travel Allowance capped at ₹1,600 per month</span>
+                </div>
+              )}
+              {results.warnings.epfAdminCapped && (
+                <div className="flex items-start gap-2 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span>EPF Admin Charges capped at ₹75 per month</span>
+                </div>
+              )}
+              {results.warnings.dliCapped && (
+                <div className="flex items-start gap-2 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span>DLI capped at ₹75 per month</span>
                 </div>
               )}
               {(results.earnings.basic < results.earnings.gross * 0.5) && (
@@ -745,7 +759,7 @@ const App = () => {
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
             <li>• ESI: Applicable only if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
-            <li>• EPF Admin Charges & DLI: 0.5% each of Gross</li>
+            <li>• EPF Admin Charges & DLI: 0.5% each of Gross (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
           </ul>
         </div>

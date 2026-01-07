@@ -1,9 +1,8 @@
 {
-  "redirects": [
+  "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "https://bibin-under-dev.vercel.app/",
-      "permanent": false
+      "source": "/:path*",
+      "destination": "https://your-landing-page-url.vercel.app/:path*"
     }
   ]
 }

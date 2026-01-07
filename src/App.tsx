@@ -44,11 +44,13 @@ const App = () => {
     
     // Iterate to get accurate gross
     for (let i = 0; i < 10; i++) {
-      const pfBase = gross - (gross * 0.5 * 0.4); // Gross - HRA (40% of Basic)
+      const basicTemp = gross * 0.5;
+      const hraTemp = basicTemp * 0.4;
+      const pfBase = gross - hraTemp;
       const employerPF = Math.min(pfBase * 0.12, 1800);
       const employerESI = gross <= 21000 ? gross * 0.0325 : 0;
-      const epfAdminCharges = Math.min(gross * 0.005, 75);
-      const dli = Math.min(gross * 0.005, 75);
+      const epfAdminCharges = Math.min((gross - hraTemp) * 0.005, 75);
+      const dli = Math.min((gross - hraTemp) * 0.005, 75);
       const totalEmployerCost = employerPF + employerESI + epfAdminCharges + dli;
       gross = monthlyCTC - totalEmployerCost;
     }
@@ -84,9 +86,9 @@ const App = () => {
       employeeESI = gross * 0.0075;
     }
     
-    // 8. EPF Admin Charges & DLI = 0.5% of Gross each (capped at ₹75)
-    const epfAdminCharges = Math.min(gross * 0.005, 75);
-    const dli = Math.min(gross * 0.005, 75);
+    // 8. EPF Admin Charges & DLI = 0.5% of (Gross - HRA) each (capped at ₹75)
+    const epfAdminCharges = Math.min((gross - hra) * 0.005, 75);
+    const dli = Math.min((gross - hra) * 0.005, 75);
     
     // 9. Net In-Hand Salary
     const netInHand = gross - (employeePF + employeeESI);
@@ -122,8 +124,8 @@ const App = () => {
         esiExceeded: gross > 21000,
         pfCapped: pfBase * 0.12 > 1800,
         taCapped: taCalculated > 1600,
-        epfAdminCapped: gross * 0.005 > 75,
-        dliCapped: gross * 0.005 > 75,
+        epfAdminCapped: (gross - hra) * 0.005 > 75,
+        dliCapped: (gross - hra) * 0.005 > 75,
         basicTooLow: basic < (gross * 0.5),
         basicTooHigh: basic > (gross * 0.5),
         hraIncorrect: hra !== (basic * 0.4), // HRA should be 40% for non-metro (Jammu)
@@ -183,7 +185,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.33</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v.1.39</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -315,7 +317,7 @@ const App = () => {
           <div class="footer">
             <p><strong>Note:</strong> This is a system-generated salary breakup based on Indian payroll standards and Jammu & Kashmir regulations.</p>
             <p>CTC = Gross + Total Employer Cost | Basic = 50% of Gross | HRA = 40% of Basic (J&K Non-Metro)</p>
-            <p>Minimum Wage Check: Basic + Allowances (excluding HRA) must meet J&K wage standards</p>
+            <p>EPF Admin & DLI = 0.5% each of (Gross - HRA), capped at ₹75 | Minimum Wage Check: Basic + Allowances (excluding HRA) must meet J&K wage standards</p>
           </div>
 
           <div class="creator">Created by Bibin Jacob</div>
@@ -350,7 +352,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.33</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v.1.39</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -759,7 +761,7 @@ const App = () => {
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
             <li>• ESI: Applicable only if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
-            <li>• EPF Admin Charges & DLI: 0.5% each of Gross (capped at ₹75)</li>
+            <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
           </ul>
         </div>

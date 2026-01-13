@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/:path*",
-      "destination": "https://your-landing-page-url.vercel.app/:path*"
+      "destination": "https://bibin-under-dev.vercel.app/:path*"
     }
   ]
 }

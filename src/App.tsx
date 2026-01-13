@@ -7,6 +7,9 @@ const App = () => {
   const [wageType, setWageType] = useState('SKILLED');
   const [staffName, setStaffName] = useState('');
   const [designation, setDesignation] = useState('');
+  const [includePF, setIncludePF] = useState(true);
+  const [includeESI, setIncludeESI] = useState(true);
+  const [includeTDS, setIncludeTDS] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [results, setResults] = useState(null);
 
@@ -25,7 +28,51 @@ const App = () => {
     { value: 'UNSKILLED', label: 'Unskilled' }
   ];
 
-  const calculateSalary = (inputCTC, type, selectedWageType) => {
+  // Income Tax Calculation for FY 2025-26 (New Tax Regime)
+  const calculateTDS = (annualIncome) => {
+    // Standard Deduction: ₹75,000
+    const standardDeduction = 75000;
+    const taxableIncome = Math.max(0, annualIncome - standardDeduction);
+    
+    let tax = 0;
+    
+    // New Tax Regime FY 2025-26
+    // 0 - 4,00,000: 0%
+    // 4,00,001 - 8,00,000: 5%
+    // 8,00,001 - 12,00,000: 10%
+    // 12,00,001 - 16,00,000: 15%
+    // 16,00,001 - 20,00,000: 20%
+    // 20,00,001 - 24,00,000: 25%
+    // Above 24,00,000: 30%
+    
+    if (taxableIncome <= 400000) {
+      tax = 0;
+    } else if (taxableIncome <= 800000) {
+      tax = (taxableIncome - 400000) * 0.05;
+    } else if (taxableIncome <= 1200000) {
+      tax = 20000 + (taxableIncome - 800000) * 0.10;
+    } else if (taxableIncome <= 1600000) {
+      tax = 60000 + (taxableIncome - 1200000) * 0.15;
+    } else if (taxableIncome <= 2000000) {
+      tax = 120000 + (taxableIncome - 1600000) * 0.20;
+    } else if (taxableIncome <= 2400000) {
+      tax = 200000 + (taxableIncome - 2000000) * 0.25;
+    } else {
+      tax = 300000 + (taxableIncome - 2400000) * 0.30;
+    }
+    
+    // Add 4% Health & Education Cess
+    tax = tax * 1.04;
+    
+    return {
+      annualTax: tax,
+      monthlyTDS: tax / 12,
+      taxableIncome: taxableIncome,
+      standardDeduction: standardDeduction
+    };
+  };
+
+  const calculateSalary = (inputCTC, type, selectedWageType, pfEnabled, esiEnabled, tdsEnabled) => {
     if (!inputCTC || inputCTC <= 0) {
       setResults(null);
       return;
@@ -47,10 +94,10 @@ const App = () => {
       const basicTemp = gross * 0.5;
       const hraTemp = basicTemp * 0.4;
       const pfBase = gross - hraTemp;
-      const employerPF = Math.min(pfBase * 0.12, 1800);
-      const employerESI = gross <= 21000 ? gross * 0.0325 : 0;
-      const epfAdminCharges = Math.min((gross - hraTemp) * 0.005, 75);
-      const dli = Math.min((gross - hraTemp) * 0.005, 75);
+      const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
+      const employerESI = (esiEnabled && gross <= 21000) ? gross * 0.0325 : 0;
+      const epfAdminCharges = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
+      const dli = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const totalEmployerCost = employerPF + employerESI + epfAdminCharges + dli;
       gross = monthlyCTC - totalEmployerCost;
     }
@@ -71,27 +118,35 @@ const App = () => {
     // 6. PF Base (Gross - HRA)
     const pfBase = gross - hra;
     
-    // Employee PF = 12% of PF Base (Max ₹1,800)
-    const employeePF = Math.min(pfBase * 0.12, 1800);
+    // Employee PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
+    const employeePF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
     
-    // Employer PF = 12% of PF Base (Max ₹1,800)
-    const employerPF = Math.min(pfBase * 0.12, 1800);
+    // Employer PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
+    const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
     
-    // 7. ESI (Only if Gross ≤ ₹21,000)
+    // 7. ESI (Only if Gross ≤ ₹21,000 and ESI is enabled)
     let employerESI = 0;
     let employeeESI = 0;
     
-    if (gross <= 21000) {
+    if (esiEnabled && gross <= 21000) {
       employerESI = gross * 0.0325;
       employeeESI = gross * 0.0075;
     }
     
-    // 8. EPF Admin Charges & DLI = 0.5% of (Gross - HRA) each (capped at ₹75)
-    const epfAdminCharges = Math.min((gross - hra) * 0.005, 75);
-    const dli = Math.min((gross - hra) * 0.005, 75);
+    // 8. EPF Admin Charges & DLI = 0.5% of (Gross - HRA) each (capped at ₹75) - only if PF is enabled
+    const epfAdminCharges = pfEnabled ? Math.min((gross - hra) * 0.005, 75) : 0;
+    const dli = pfEnabled ? Math.min((gross - hra) * 0.005, 75) : 0;
     
-    // 9. Net In-Hand Salary
-    const netInHand = gross - (employeePF + employeeESI);
+    // 9. Calculate TDS if enabled
+    let tdsData = null;
+    if (tdsEnabled) {
+      const annualGross = gross * 12;
+      tdsData = calculateTDS(annualGross);
+    }
+    
+    // 10. Net In-Hand Salary
+    const monthlyTDS = tdsEnabled && tdsData ? tdsData.monthlyTDS : 0;
+    const netInHand = gross - (employeePF + employeeESI + monthlyTDS);
     
     // Get minimum wage for selected category
     const minWage = minimumWages[selectedWageType];
@@ -117,22 +172,27 @@ const App = () => {
       employeeDeductions: {
         employeePF: employeePF,
         employeeESI: employeeESI,
-        total: employeePF + employeeESI
+        tds: monthlyTDS,
+        total: employeePF + employeeESI + monthlyTDS
       },
+      tdsDetails: tdsData,
       netInHand: netInHand,
+      pfEnabled: pfEnabled,
+      esiEnabled: esiEnabled,
+      tdsEnabled: tdsEnabled,
       warnings: {
         esiExceeded: gross > 21000,
-        pfCapped: pfBase * 0.12 > 1800,
+        pfCapped: pfEnabled && (pfBase * 0.12 > 1800),
         taCapped: taCalculated > 1600,
-        epfAdminCapped: (gross - hra) * 0.005 > 75,
-        dliCapped: (gross - hra) * 0.005 > 75,
+        epfAdminCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
+        dliCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         basicTooLow: basic < (gross * 0.5),
         basicTooHigh: basic > (gross * 0.5),
-        hraIncorrect: hra !== (basic * 0.4), // HRA should be 40% for non-metro (Jammu)
-        pfBaseIncorrect: pfBase !== (basic + otherAllowances), // PF on Basic + DA under new code
-        esiLimit: gross > 21000 && gross <= 25000, // New ESI limit consideration
-        gratuityApplicable: monthlyCTC >= 15000, // Gratuity applicable info
-        minimumWageCheck: wageForComparison < minWage, // Check Basic + Allowances (except HRA)
+        hraIncorrect: hra !== (basic * 0.4),
+        pfBaseIncorrect: pfBase !== (basic + otherAllowances),
+        esiLimit: esiEnabled && gross > 21000 && gross <= 25000,
+        gratuityApplicable: monthlyCTC >= 15000,
+        minimumWageCheck: wageForComparison < minWage,
         minimumWageAmount: minWage,
         wageCategory: selectedWageType,
         actualWageAmount: wageForComparison
@@ -142,10 +202,10 @@ const App = () => {
 
   useEffect(() => {
     if (ctc) {
-      const result = calculateSalary(parseFloat(ctc), calculationType, wageType);
+      const result = calculateSalary(parseFloat(ctc), calculationType, wageType, includePF, includeESI, includeTDS);
       setResults(result);
     }
-  }, [ctc, calculationType, wageType]);
+  }, [ctc, calculationType, wageType, includePF, includeESI, includeTDS]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -159,6 +219,106 @@ const App = () => {
     if (!results) return;
     
     const printContent = document.createElement('div');
+    
+    // Build employer contributions rows
+    let employerRows = '';
+    if (results.pfEnabled) {
+      employerRows += `
+        <tr>
+          <td>Employer PF</td>
+          <td>${formatCurrency(results.employerContributions.employerPF)}</td>
+          <td>${formatCurrency(results.employerContributions.employerPF * 12)}</td>
+        </tr>
+        <tr>
+          <td>EPF Admin Charges</td>
+          <td>${formatCurrency(results.employerContributions.epfAdminCharges)}</td>
+          <td>${formatCurrency(results.employerContributions.epfAdminCharges * 12)}</td>
+        </tr>
+        <tr>
+          <td>DLI</td>
+          <td>${formatCurrency(results.employerContributions.dli)}</td>
+          <td>${formatCurrency(results.employerContributions.dli * 12)}</td>
+        </tr>
+      `;
+    }
+    if (results.esiEnabled) {
+      employerRows += `
+        <tr>
+          <td>Employer ESI</td>
+          <td>${formatCurrency(results.employerContributions.employerESI)}</td>
+          <td>${formatCurrency(results.employerContributions.employerESI * 12)}</td>
+        </tr>
+      `;
+    }
+    if (!results.pfEnabled && !results.esiEnabled) {
+      employerRows = '<tr><td colspan="3" style="text-align: center; color: #999;">No employer contributions (PF & ESI disabled)</td></tr>';
+    }
+    
+    // Build employee deduction rows
+    let deductionRows = '';
+    if (results.pfEnabled) {
+      deductionRows += `
+        <tr>
+          <td>Employee PF</td>
+          <td>${formatCurrency(results.employeeDeductions.employeePF)}</td>
+          <td>${formatCurrency(results.employeeDeductions.employeePF * 12)}</td>
+        </tr>
+      `;
+    }
+    if (results.esiEnabled) {
+      deductionRows += `
+        <tr>
+          <td>Employee ESI</td>
+          <td>${formatCurrency(results.employeeDeductions.employeeESI)}</td>
+          <td>${formatCurrency(results.employeeDeductions.employeeESI * 12)}</td>
+        </tr>
+      `;
+    }
+    if (results.tdsEnabled && results.tdsDetails) {
+      deductionRows += `
+        <tr>
+          <td>TDS (Income Tax)</td>
+          <td>${formatCurrency(results.tdsDetails.monthlyTDS)}</td>
+          <td>${formatCurrency(results.tdsDetails.annualTax)}</td>
+        </tr>
+      `;
+    }
+    if (!results.pfEnabled && !results.esiEnabled && !results.tdsEnabled) {
+      deductionRows = '<tr><td colspan="3" style="text-align: center; color: #999;">No deductions (PF, ESI & TDS disabled)</td></tr>';
+    }
+    
+    // TDS breakdown section
+    let tdsSection = '';
+    if (results.tdsEnabled && results.tdsDetails) {
+      tdsSection = `
+        <div style="margin: 20px 0; padding: 15px; background: #FFF7ED; border-radius: 8px; border-left: 4px solid #F97316;">
+          <h3 style="color: #F97316; margin-bottom: 10px;">📊 Income Tax (TDS) Breakdown - FY 2025-26</h3>
+          <table style="width: 100%; border: none;">
+            <tr>
+              <td style="border: none; padding: 5px;"><strong>Annual Gross Income:</strong></td>
+              <td style="border: none; padding: 5px; text-align: right;">${formatCurrency(results.earnings.gross * 12)}</td>
+            </tr>
+            <tr>
+              <td style="border: none; padding: 5px;"><strong>Standard Deduction:</strong></td>
+              <td style="border: none; padding: 5px; text-align: right;">- ${formatCurrency(results.tdsDetails.standardDeduction)}</td>
+            </tr>
+            <tr style="border-top: 1px solid #ddd;">
+              <td style="border: none; padding: 5px;"><strong>Taxable Income:</strong></td>
+              <td style="border: none; padding: 5px; text-align: right;"><strong>${formatCurrency(results.tdsDetails.taxableIncome)}</strong></td>
+            </tr>
+            <tr>
+              <td style="border: none; padding: 5px;"><strong>Annual Tax (with Cess):</strong></td>
+              <td style="border: none; padding: 5px; text-align: right; color: #DC2626;"><strong>${formatCurrency(results.tdsDetails.annualTax)}</strong></td>
+            </tr>
+            <tr>
+              <td style="border: none; padding: 5px;"><strong>Monthly TDS:</strong></td>
+              <td style="border: none; padding: 5px; text-align: right; color: #DC2626;"><strong>${formatCurrency(results.tdsDetails.monthlyTDS)}</strong></td>
+            </tr>
+          </table>
+          <p style="font-size: 10px; color: #666; margin-top: 10px;"><strong>Note:</strong> Tax calculated as per New Tax Regime FY 2025-26. Standard deduction: ₹75,000. Tax slabs: 0% (up to ₹4L), 5% (₹4-8L), 10% (₹8-12L), 15% (₹12-16L), 20% (₹16-20L), 25% (₹20-24L), 30% (above ₹24L). Includes 4% Health & Education Cess.</p>
+        </div>
+      `;
+    }
     printContent.innerHTML = `
       <html>
         <head>
@@ -185,7 +345,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v.1.39</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v.1.53</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -256,26 +416,7 @@ const App = () => {
               <th>Monthly</th>
               <th>Annual</th>
             </tr>
-            <tr>
-              <td>Employer PF</td>
-              <td>${formatCurrency(results.employerContributions.employerPF)}</td>
-              <td>${formatCurrency(results.employerContributions.employerPF * 12)}</td>
-            </tr>
-            <tr>
-              <td>Employer ESI</td>
-              <td>${formatCurrency(results.employerContributions.employerESI)}</td>
-              <td>${formatCurrency(results.employerContributions.employerESI * 12)}</td>
-            </tr>
-            <tr>
-              <td>EPF Admin Charges</td>
-              <td>${formatCurrency(results.employerContributions.epfAdminCharges)}</td>
-              <td>${formatCurrency(results.employerContributions.epfAdminCharges * 12)}</td>
-            </tr>
-            <tr>
-              <td>DLI</td>
-              <td>${formatCurrency(results.employerContributions.dli)}</td>
-              <td>${formatCurrency(results.employerContributions.dli * 12)}</td>
-            </tr>
+            ${employerRows}
             <tr class="total-row">
               <td>Total Employer Cost</td>
               <td>${formatCurrency(results.employerContributions.total)}</td>
@@ -292,22 +433,15 @@ const App = () => {
               <th>Monthly</th>
               <th>Annual</th>
             </tr>
-            <tr>
-              <td>Employee PF</td>
-              <td>${formatCurrency(results.employeeDeductions.employeePF)}</td>
-              <td>${formatCurrency(results.employeeDeductions.employeePF * 12)}</td>
-            </tr>
-            <tr>
-              <td>Employee ESI</td>
-              <td>${formatCurrency(results.employeeDeductions.employeeESI)}</td>
-              <td>${formatCurrency(results.employeeDeductions.employeeESI * 12)}</td>
-            </tr>
+            ${deductionRows}
             <tr class="total-row">
               <td>Total Deductions</td>
               <td>${formatCurrency(results.employeeDeductions.total)}</td>
               <td>${formatCurrency(results.employeeDeductions.total * 12)}</td>
             </tr>
           </table>
+
+          ${tdsSection}
 
           <div class="net-salary">
             ✅ NET IN-HAND SALARY<br>
@@ -352,7 +486,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v.1.39</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v.1.53</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -462,6 +596,38 @@ const App = () => {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includePF}
+                onChange={(e) => setIncludePF(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-medium">Include PF (Provident Fund)</span>
+            </label>
+            
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeESI}
+                onChange={(e) => setIncludeESI(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-medium">Include ESI (Employee State Insurance)</span>
+            </label>
+            
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeTDS}
+                onChange={(e) => setIncludeTDS(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-medium">Include TDS (Income Tax Deduction)</span>
+            </label>
           </div>
 
           {results?.warnings && (
@@ -577,22 +743,33 @@ const App = () => {
                 <div className={`${cardClasses} rounded-xl shadow-lg border p-6 mb-4`}>
                   <h3 className="text-lg font-semibold mb-4 text-blue-600">🏢 Employer Contributions</h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer PF</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.employerPF)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer ESI</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.employerESI)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>EPF Admin Charges</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.epfAdminCharges)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>DLI</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.dli)}</span>
-                    </div>
+                    {results.pfEnabled && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer PF</span>
+                          <span className="font-semibold">{formatCurrency(results.employerContributions.employerPF)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>EPF Admin Charges</span>
+                          <span className="font-semibold">{formatCurrency(results.employerContributions.epfAdminCharges)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>DLI</span>
+                          <span className="font-semibold">{formatCurrency(results.employerContributions.dli)}</span>
+                        </div>
+                      </>
+                    )}
+                    {results.esiEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer ESI</span>
+                        <span className="font-semibold">{formatCurrency(results.employerContributions.employerESI)}</span>
+                      </div>
+                    )}
+                    {!results.pfEnabled && !results.esiEnabled && (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        No employer contributions (PF & ESI disabled)
+                      </div>
+                    )}
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between text-lg">
                         <span className="font-bold">Total Employer Cost</span>
@@ -606,14 +783,29 @@ const App = () => {
                 <div className={`${cardClasses} rounded-xl shadow-lg border p-6`}>
                   <h3 className="text-lg font-semibold mb-4 text-red-600">👤 Employee Deductions</h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee PF</span>
-                      <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeePF)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee ESI</span>
-                      <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeeESI)}</span>
-                    </div>
+                    {results.pfEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee PF</span>
+                        <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeePF)}</span>
+                      </div>
+                    )}
+                    {results.esiEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee ESI</span>
+                        <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeeESI)}</span>
+                      </div>
+                    )}
+                    {results.tdsEnabled && results.tdsDetails && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>TDS (Income Tax)</span>
+                        <span className="font-semibold">{formatCurrency(results.employeeDeductions.tds)}</span>
+                      </div>
+                    )}
+                    {!results.pfEnabled && !results.esiEnabled && !results.tdsEnabled && (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        No deductions (PF, ESI & TDS disabled)
+                      </div>
+                    )}
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between text-lg">
                         <span className="font-bold">Total Deductions</span>
@@ -661,22 +853,33 @@ const App = () => {
                 <div className={`${cardClasses} rounded-xl shadow-lg border p-6 mb-4`}>
                   <h3 className="text-lg font-semibold mb-4 text-blue-600">🏢 Employer Contributions</h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer PF</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.employerPF * 12)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer ESI</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.employerESI * 12)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>EPF Admin Charges</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.epfAdminCharges * 12)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>DLI</span>
-                      <span className="font-semibold">{formatCurrency(results.employerContributions.dli * 12)}</span>
-                    </div>
+                    {results.pfEnabled && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer PF</span>
+                          <span className="font-semibold">{formatCurrency(results.employerContributions.employerPF * 12)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>EPF Admin Charges</span>
+                          <span className="font-semibold">{formatCurrency(results.employerContributions.epfAdminCharges * 12)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>DLI</span>
+                          <span className="font-semibold">{formatCurrency(results.employerContributions.dli * 12)}</span>
+                        </div>
+                      </>
+                    )}
+                    {results.esiEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employer ESI</span>
+                        <span className="font-semibold">{formatCurrency(results.employerContributions.employerESI * 12)}</span>
+                      </div>
+                    )}
+                    {!results.pfEnabled && !results.esiEnabled && (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        No employer contributions (PF & ESI disabled)
+                      </div>
+                    )}
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between text-lg">
                         <span className="font-bold">Total Employer Cost</span>
@@ -690,14 +893,29 @@ const App = () => {
                 <div className={`${cardClasses} rounded-xl shadow-lg border p-6`}>
                   <h3 className="text-lg font-semibold mb-4 text-red-600">👤 Employee Deductions</h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee PF</span>
-                      <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeePF * 12)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee ESI</span>
-                      <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeeESI * 12)}</span>
-                    </div>
+                    {results.pfEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee PF</span>
+                        <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeePF * 12)}</span>
+                      </div>
+                    )}
+                    {results.esiEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Employee ESI</span>
+                        <span className="font-semibold">{formatCurrency(results.employeeDeductions.employeeESI * 12)}</span>
+                      </div>
+                    )}
+                    {results.tdsEnabled && results.tdsDetails && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>TDS (Income Tax)</span>
+                        <span className="font-semibold">{formatCurrency(results.tdsDetails.annualTax)}</span>
+                      </div>
+                    )}
+                    {!results.pfEnabled && !results.esiEnabled && !results.tdsEnabled && (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        No deductions (PF, ESI & TDS disabled)
+                      </div>
+                    )}
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between text-lg">
                         <span className="font-bold">Total Deductions</span>
@@ -732,6 +950,46 @@ const App = () => {
                 </div>
               </div>
             </div>
+
+            {/* TDS Details Section */}
+            {results.tdsEnabled && results.tdsDetails && (
+              <div className={`${cardClasses} rounded-xl shadow-lg border p-6 mb-6`}>
+                <h3 className="text-xl font-semibold mb-4 text-orange-600">📊 Income Tax (TDS) Breakdown - FY 2025-26</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Annual Gross Income:</span>
+                      <span className="font-semibold">{formatCurrency(results.earnings.gross * 12)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Standard Deduction:</span>
+                      <span className="font-semibold">- {formatCurrency(results.tdsDetails.standardDeduction)}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="font-bold">Taxable Income:</span>
+                      <span className="font-bold">{formatCurrency(results.tdsDetails.taxableIncome)}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Annual Tax (with Cess):</span>
+                      <span className="font-semibold text-red-600">{formatCurrency(results.tdsDetails.annualTax)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Monthly TDS:</span>
+                      <span className="font-semibold text-red-600">{formatCurrency(results.tdsDetails.monthlyTDS)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className={`mt-4 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-orange-50'}`}>
+                  <p className="text-xs text-gray-600">
+                    <strong>Note:</strong> Tax calculated as per New Tax Regime FY 2025-26 with standard deduction of ₹75,000. 
+                    Rates: 0% up to ₹4L, 5% (₹4-8L), 10% (₹8-12L), 15% (₹12-16L), 20% (₹16-20L), 25% (₹20-24L), 30% (above ₹24L). 
+                    Includes 4% Health & Education Cess.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Creator Credit */}
             <div className="text-right mb-2">

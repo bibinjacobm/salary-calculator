@@ -1,85 +1,20 @@
-"use client";
-
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator, Download, Info, Moon, Sun } from 'lucide-react';
 
-// --- TypeScript Interfaces ---
-interface TDSDetails {
-  annualTax: number;
-  monthlyTDS: number;
-  taxableIncome: number;
-  standardDeduction: number;
-}
-
-interface Earnings {
-  basic: number;
-  hra: number;
-  ta: number;
-  otherAllowances: number;
-  gross: number;
-}
-
-interface EmployerContributions {
-  employerPF: number;
-  employerESI: number;
-  epfAdminCharges: number;
-  dli: number;
-  total: number;
-}
-
-interface EmployeeDeductions {
-  employeePF: number;
-  employeeESI: number;
-  tds: number;
-  total: number;
-}
-
-interface Warnings {
-  esiExceeded: boolean;
-  pfCapped: boolean;
-  taCapped: boolean;
-  epfAdminCapped: boolean;
-  dliCapped: boolean;
-  basicTooLow: boolean;
-  basicTooHigh: boolean;
-  hraIncorrect: boolean;
-  pfBaseIncorrect: boolean;
-  esiLimit: boolean;
-  gratuityApplicable: boolean;
-  minimumWageCheck: boolean;
-  minimumWageAmount: number;
-  wageCategory: string;
-  actualWageAmount: number;
-}
-
-interface SalaryResult {
-  earnings: Earnings;
-  employerContributions: EmployerContributions;
-  employeeDeductions: EmployeeDeductions;
-  tdsDetails: TDSDetails | null;
-  netInHand: number;
-  pfEnabled: boolean;
-  esiEnabled: boolean;
-  tdsEnabled: boolean;
-  warnings: Warnings;
-}
-
-// --- Component ---
-
 const App = () => {
-  const [ctc, setCtc] = useState<string>('');
-  const [calculationType, setCalculationType] = useState<string>('monthly');
-  const [wageType, setWageType] = useState<string>('SKILLED');
-  const [staffName, setStaffName] = useState<string>('');
-  const [designation, setDesignation] = useState<string>('');
-  const [includePF, setIncludePF] = useState<boolean>(true);
-  const [includeESI, setIncludeESI] = useState<boolean>(true);
-  const [includeTDS, setIncludeTDS] = useState<boolean>(false);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [results, setResults] = useState<SalaryResult | null>(null);
+  const [ctc, setCtc] = useState('');
+  const [calculationType, setCalculationType] = useState('monthly');
+  const [wageType, setWageType] = useState('SKILLED');
+  const [staffName, setStaffName] = useState('');
+  const [designation, setDesignation] = useState('');
+  const [includePF, setIncludePF] = useState(true);
+  const [includeESI, setIncludeESI] = useState(true);
+  const [includeTDS, setIncludeTDS] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [results, setResults] = useState(null);
 
-  // Jammu & Kashmir Minimum Wages (Monthly)
-  const minimumWages: Record<string, number> = {
+  // Jammu & Kashmir Minimum Wages (Monthly - as per latest standards)
+  const minimumWages = {
     'HIGHLY_SKILLED': 12500,
     'SKILLED': 11000,
     'SEMI_SKILLED': 9500,
@@ -93,12 +28,22 @@ const App = () => {
     { value: 'UNSKILLED', label: 'Unskilled' }
   ];
 
-  // Income Tax Calculation for FY 2025-26
-  const calculateTDS = (annualIncome: number): TDSDetails => {
+  // Income Tax Calculation for FY 2025-26 (New Tax Regime)
+  const calculateTDS = (annualIncome) => {
+    // Standard Deduction: ₹75,000
     const standardDeduction = 75000;
     const taxableIncome = Math.max(0, annualIncome - standardDeduction);
     
     let tax = 0;
+    
+    // New Tax Regime FY 2025-26
+    // 0 - 4,00,000: 0%
+    // 4,00,001 - 8,00,000: 5%
+    // 8,00,001 - 12,00,000: 10%
+    // 12,00,001 - 16,00,000: 15%
+    // 16,00,001 - 20,00,000: 20%
+    // 20,00,001 - 24,00,000: 25%
+    // Above 24,00,000: 30%
     
     if (taxableIncome <= 400000) {
       tax = 0;
@@ -127,28 +72,29 @@ const App = () => {
     };
   };
 
-  const calculateSalary = (
-    inputCTC: number, 
-    type: string, 
-    selectedWageType: string, 
-    pfEnabled: boolean, 
-    esiEnabled: boolean, 
-    tdsEnabled: boolean
-  ): SalaryResult | null => {
+  const calculateSalary = (inputCTC, type, selectedWageType, pfEnabled, esiEnabled, tdsEnabled) => {
     if (!inputCTC || inputCTC <= 0) {
-      return null;
+      setResults(null);
+      return;
     }
 
     const monthlyCTC = type === 'annual' ? inputCTC / 12 : inputCTC;
     
-    let gross = monthlyCTC / 1.15; // Initial estimate
+    // CTC = Gross + Total Employer Cost
+    // We need to calculate Gross first, then derive components
     
     // Iterative calculation to find Gross from CTC
+    // CTC = Gross + (Employer PF + Employer ESI + EPF Admin + DLI)
+    // EPF Admin & DLI = 0.5% of Gross each
+    
+    let gross = monthlyCTC / 1.15; // Initial estimate
+    
+    // Iterate to get accurate gross
     for (let i = 0; i < 10; i++) {
-      const basicTemp = gross * 0.51;
+      const basicTemp = gross * 0.5;
       const hraTemp = basicTemp * 0.4;
-      // const pfBase = gross - hraTemp; // Unused in iteration but kept for logic check
-      const employerPF = pfEnabled ? Math.min((gross - hraTemp) * 0.12, 1800) : 0;
+      const pfBase = gross - hraTemp;
+      const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
       const employerESI = (esiEnabled && gross <= 21000) ? gross * 0.0325 : 0;
       const epfAdminCharges = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const dli = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
@@ -156,16 +102,29 @@ const App = () => {
       gross = monthlyCTC - totalEmployerCost;
     }
     
-    const basic = gross * 0.51;
+    // 1. Basic Salary = 50% of Gross
+    const basic = gross * 0.5;
+    
+    // 2. HRA = 40% of Basic (Jammu - Non-metro city as per new labour code)
     const hra = basic * 0.4;
+    
+    // 3. TA = 15% of Basic (Max ₹1,600)
     const taCalculated = basic * 0.15;
     const ta = Math.min(taCalculated, 1600);
+    
+    // 5. Other Allowances
     const otherAllowances = gross - (basic + hra + ta);
+    
+    // 6. PF Base (Gross - HRA)
     const pfBase = gross - hra;
     
+    // Employee PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
     const employeePF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
+    
+    // Employer PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
     const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
     
+    // 7. ESI (Only if Gross ≤ ₹21,000 and ESI is enabled)
     let employerESI = 0;
     let employeeESI = 0;
     
@@ -174,47 +133,53 @@ const App = () => {
       employeeESI = gross * 0.0075;
     }
     
+    // 8. EPF Admin Charges & DLI = 0.5% of (Gross - HRA) each (capped at ₹75) - only if PF is enabled
     const epfAdminCharges = pfEnabled ? Math.min((gross - hra) * 0.005, 75) : 0;
     const dli = pfEnabled ? Math.min((gross - hra) * 0.005, 75) : 0;
     
-    let tdsData: TDSDetails | null = null;
+    // 9. Calculate TDS if enabled
+    let tdsData = null;
     if (tdsEnabled) {
       const annualGross = gross * 12;
       tdsData = calculateTDS(annualGross);
     }
     
+    // 10. Net In-Hand Salary
     const monthlyTDS = tdsEnabled && tdsData ? tdsData.monthlyTDS : 0;
     const netInHand = gross - (employeePF + employeeESI + monthlyTDS);
     
+    // Get minimum wage for selected category
     const minWage = minimumWages[selectedWageType];
+    
+    // For minimum wage check: Basic + Allowances (except HRA)
     const wageForComparison = basic + ta + otherAllowances;
     
     return {
       earnings: {
-        basic,
-        hra,
-        ta,
-        otherAllowances,
-        gross
+        basic: basic,
+        hra: hra,
+        ta: ta,
+        otherAllowances: otherAllowances,
+        gross: gross
       },
       employerContributions: {
-        employerPF,
-        employerESI,
-        epfAdminCharges,
-        dli,
+        employerPF: employerPF,
+        employerESI: employerESI,
+        epfAdminCharges: epfAdminCharges,
+        dli: dli,
         total: employerPF + employerESI + epfAdminCharges + dli
       },
       employeeDeductions: {
-        employeePF,
-        employeeESI,
+        employeePF: employeePF,
+        employeeESI: employeeESI,
         tds: monthlyTDS,
         total: employeePF + employeeESI + monthlyTDS
       },
       tdsDetails: tdsData,
-      netInHand,
-      pfEnabled,
-      esiEnabled,
-      tdsEnabled,
+      netInHand: netInHand,
+      pfEnabled: pfEnabled,
+      esiEnabled: esiEnabled,
+      tdsEnabled: tdsEnabled,
       warnings: {
         esiExceeded: gross > 21000,
         pfCapped: pfEnabled && (pfBase * 0.12 > 1800),
@@ -222,7 +187,7 @@ const App = () => {
         epfAdminCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         dliCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         basicTooLow: basic < (gross * 0.5),
-        basicTooHigh: basic > (gross * 0.51),
+        basicTooHigh: basic > (gross * 0.5),
         hraIncorrect: hra !== (basic * 0.4),
         pfBaseIncorrect: pfBase !== (basic + otherAllowances),
         esiLimit: esiEnabled && gross > 21000 && gross <= 25000,
@@ -239,12 +204,10 @@ const App = () => {
     if (ctc) {
       const result = calculateSalary(parseFloat(ctc), calculationType, wageType, includePF, includeESI, includeTDS);
       setResults(result);
-    } else {
-      setResults(null);
     }
   }, [ctc, calculationType, wageType, includePF, includeESI, includeTDS]);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -257,7 +220,7 @@ const App = () => {
     
     const printContent = document.createElement('div');
     
-    // HTML Generation Logic...
+    // Build employer contributions rows
     let employerRows = '';
     if (results.pfEnabled) {
       employerRows += `
@@ -291,6 +254,7 @@ const App = () => {
       employerRows = '<tr><td colspan="3" style="text-align: center; color: #999;">No employer contributions (PF & ESI disabled)</td></tr>';
     }
     
+    // Build employee deduction rows
     let deductionRows = '';
     if (results.pfEnabled) {
       deductionRows += `
@@ -323,6 +287,7 @@ const App = () => {
       deductionRows = '<tr><td colspan="3" style="text-align: center; color: #999;">No deductions (PF, ESI & TDS disabled)</td></tr>';
     }
     
+    // TDS breakdown section
     let tdsSection = '';
     if (results.tdsEnabled && results.tdsDetails) {
       tdsSection = `
@@ -354,7 +319,6 @@ const App = () => {
         </div>
       `;
     }
-
     printContent.innerHTML = `
       <html>
         <head>
@@ -381,7 +345,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.62</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.53</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -486,7 +450,7 @@ const App = () => {
 
           <div class="footer">
             <p><strong>Note:</strong> This is a system-generated salary breakup based on Indian payroll standards and Jammu & Kashmir regulations.</p>
-            <p>CTC = Gross + Total Employer Cost | Basic = 51% of Gross (ensures >50% compliance) | HRA = 40% of Basic (J&K Non-Metro)</p>
+            <p>CTC = Gross + Total Employer Cost | Basic = 50% of Gross | HRA = 40% of Basic (J&K Non-Metro)</p>
             <p>EPF Admin & DLI = 0.5% each of (Gross - HRA), capped at ₹75 | Minimum Wage Check: Basic + Allowances (excluding HRA) must meet J&K wage standards</p>
           </div>
 
@@ -497,15 +461,13 @@ const App = () => {
     `;
     
     const printWindow = window.open('', '', 'height=800,width=800');
-    if (printWindow) {
-      printWindow.document.write(printContent.innerHTML);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-    }
+    printWindow.document.write(printContent.innerHTML);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   const themeClasses = darkMode 
@@ -524,7 +486,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.62</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.53</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -550,7 +512,7 @@ const App = () => {
               <input
                 type="text"
                 value={staffName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setStaffName(e.target.value)}
+                onChange={(e) => setStaffName(e.target.value)}
                 placeholder="Enter staff name"
                 className={`w-full px-4 py-3 rounded-lg border ${
                   darkMode 
@@ -567,7 +529,7 @@ const App = () => {
               <input
                 type="text"
                 value={designation}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setDesignation(e.target.value)}
+                onChange={(e) => setDesignation(e.target.value)}
                 placeholder="Enter designation"
                 className={`w-full px-4 py-3 rounded-lg border ${
                   darkMode 
@@ -586,7 +548,7 @@ const App = () => {
               <input
                 type="number"
                 value={ctc}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setCtc(e.target.value)}
+                onChange={(e) => setCtc(e.target.value)}
                 placeholder="Enter CTC"
                 className={`w-full px-4 py-3 rounded-lg border ${
                   darkMode 
@@ -602,7 +564,7 @@ const App = () => {
               </label>
               <select
                 value={calculationType}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setCalculationType(e.target.value)}
+                onChange={(e) => setCalculationType(e.target.value)}
                 className={`w-full px-4 py-3 rounded-lg border ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white' 
@@ -620,7 +582,7 @@ const App = () => {
               </label>
               <select
                 value={wageType}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => setWageType(e.target.value)}
+                onChange={(e) => setWageType(e.target.value)}
                 className={`w-full px-4 py-3 rounded-lg border ${
                   darkMode 
                     ? 'bg-gray-700 border-gray-600 text-white' 
@@ -641,7 +603,7 @@ const App = () => {
               <input
                 type="checkbox"
                 checked={includePF}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setIncludePF(e.target.checked)}
+                onChange={(e) => setIncludePF(e.target.checked)}
                 className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-sm font-medium">Include PF (Provident Fund)</span>
@@ -651,7 +613,7 @@ const App = () => {
               <input
                 type="checkbox"
                 checked={includeESI}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setIncludeESI(e.target.checked)}
+                onChange={(e) => setIncludeESI(e.target.checked)}
                 className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-sm font-medium">Include ESI (Employee State Insurance)</span>
@@ -661,7 +623,7 @@ const App = () => {
               <input
                 type="checkbox"
                 checked={includeTDS}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setIncludeTDS(e.target.checked)}
+                onChange={(e) => setIncludeTDS(e.target.checked)}
                 className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
               />
               <span className="text-sm font-medium">Include TDS (Income Tax Deduction)</span>
@@ -1052,7 +1014,7 @@ const App = () => {
           <h3 className="text-lg font-semibold mb-3">📋 Calculation Assumptions</h3>
           <ul className={`space-y-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             <li>• CTC = Gross + Total Employer Cost (Employer PF + Employer ESI + EPF Admin + DLI)</li>
-            <li>• Basic Salary: 51% of Gross (ensures compliance with >50% requirement)</li>
+            <li>• Basic Salary: 50% of Gross</li>
             <li>• HRA: 40% of Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
@@ -1069,7 +1031,7 @@ const App = () => {
             <div>
               <p className="font-semibold text-base mb-1">Key Requirements Under New Wage Code:</p>
               <ul className="space-y-2 ml-4">
-                <li>• <strong>Basic Salary:</strong> Must be minimum 50% of gross salary (mandatory) - set to 51% to ensure compliance</li>
+                <li>• <strong>Basic Salary:</strong> Must be minimum 50% of gross salary (mandatory)</li>
                 <li>• <strong>Allowances Cap:</strong> Total allowances cannot exceed 50% of gross salary</li>
                 <li>• <strong>HRA Limit:</strong> 40% of Basic for Jammu & Kashmir (non-metro classification)</li>
                 <li>• <strong>PF Base:</strong> Calculated on Basic + Dearness Allowance (all allowances may be included)</li>

@@ -91,7 +91,7 @@ const App = () => {
     
     // Iterate to get accurate gross
     for (let i = 0; i < 10; i++) {
-      const basicTemp = gross * 0.5;
+      const basicTemp = gross * 0.51;
       const hraTemp = basicTemp * 0.4;
       const pfBase = gross - hraTemp;
       const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
@@ -102,8 +102,8 @@ const App = () => {
       gross = monthlyCTC - totalEmployerCost;
     }
     
-    // 1. Basic Salary = 50% of Gross
-    const basic = gross * 0.5;
+    // 1. Basic Salary = 51% of Gross (to ensure compliance with new labour code requiring >50%)
+    const basic = gross * 0.51;
     
     // 2. HRA = 40% of Basic (Jammu - Non-metro city as per new labour code)
     const hra = basic * 0.4;
@@ -187,7 +187,7 @@ const App = () => {
         epfAdminCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         dliCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         basicTooLow: basic < (gross * 0.5),
-        basicTooHigh: basic > (gross * 0.5),
+        basicTooHigh: basic > (gross * 0.51),
         hraIncorrect: hra !== (basic * 0.4),
         pfBaseIncorrect: pfBase !== (basic + otherAllowances),
         esiLimit: esiEnabled && gross > 21000 && gross <= 25000,
@@ -345,7 +345,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.53</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.62</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -450,7 +450,7 @@ const App = () => {
 
           <div class="footer">
             <p><strong>Note:</strong> This is a system-generated salary breakup based on Indian payroll standards and Jammu & Kashmir regulations.</p>
-            <p>CTC = Gross + Total Employer Cost | Basic = 50% of Gross | HRA = 40% of Basic (J&K Non-Metro)</p>
+            <p>CTC = Gross + Total Employer Cost | Basic = 51% of Gross (ensures >50% compliance) | HRA = 40% of Basic (J&K Non-Metro)</p>
             <p>EPF Admin & DLI = 0.5% each of (Gross - HRA), capped at ₹75 | Minimum Wage Check: Basic + Allowances (excluding HRA) must meet J&K wage standards</p>
           </div>
 
@@ -486,7 +486,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.53</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.62</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -1014,7 +1014,7 @@ const App = () => {
           <h3 className="text-lg font-semibold mb-3">📋 Calculation Assumptions</h3>
           <ul className={`space-y-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             <li>• CTC = Gross + Total Employer Cost (Employer PF + Employer ESI + EPF Admin + DLI)</li>
-            <li>• Basic Salary: 50% of Gross</li>
+            <li>• Basic Salary: 51% of Gross (ensures compliance with &gt;50% requirement)</li>
             <li>• HRA: 40% of Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
@@ -1031,7 +1031,7 @@ const App = () => {
             <div>
               <p className="font-semibold text-base mb-1">Key Requirements Under New Wage Code:</p>
               <ul className="space-y-2 ml-4">
-                <li>• <strong>Basic Salary:</strong> Must be minimum 50% of gross salary (mandatory)</li>
+                <li>• <strong>Basic Salary:</strong> Must be minimum 50% of gross salary (mandatory) - set to 51% to ensure compliance</li>
                 <li>• <strong>Allowances Cap:</strong> Total allowances cannot exceed 50% of gross salary</li>
                 <li>• <strong>HRA Limit:</strong> 40% of Basic for Jammu & Kashmir (non-metro classification)</li>
                 <li>• <strong>PF Base:</strong> Calculated on Basic + Dearness Allowance (all allowances may be included)</li>

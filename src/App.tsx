@@ -195,7 +195,12 @@ const App = () => {
         minimumWageCheck: wageForComparison < minWage,
         minimumWageAmount: minWage,
         wageCategory: selectedWageType,
-        actualWageAmount: wageForComparison
+        actualWageAmount: wageForComparison,
+        // New warnings for statutory compliance
+        tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), // Annual income > 4L (taxable)
+        pfNotEnabledButMandatory: !pfEnabled && (pfBase <= 15000), // PF mandatory if PF Base (Gross - HRA) <= 15000
+        pfNotEnabledButOptional: !pfEnabled && (pfBase > 15000), // PF optional if PF Base > 15000
+        esiNotEnabledButEligible: !esiEnabled && (gross <= 21000) // ESI applicable if gross <= 21000
       }
     };
   };
@@ -279,7 +284,7 @@ const App = () => {
         <tr>
           <td>TDS (Income Tax)</td>
           <td>${formatCurrency(results.tdsDetails.monthlyTDS)}</td>
-          <td>${formatCurrency(results.tdsDetails.annualTax)}</td>
+          <td>${formatCurrency(results.employeeDeductions.tds * 12)}</td>
         </tr>
       `;
     }
@@ -308,7 +313,7 @@ const App = () => {
             </tr>
             <tr>
               <td style="border: none; padding: 5px;"><strong>Annual Tax (with Cess):</strong></td>
-              <td style="border: none; padding: 5px; text-align: right; color: #DC2626;"><strong>${formatCurrency(results.tdsDetails.annualTax)}</strong></td>
+              <td style="border: none; padding: 5px; text-align: right; color: #DC2626;"><strong>${formatCurrency(results.employeeDeductions.tds * 12)}</strong></td>
             </tr>
             <tr>
               <td style="border: none; padding: 5px;"><strong>Monthly TDS:</strong></td>
@@ -345,7 +350,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.62</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.73</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -486,7 +491,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.62</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.73</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -696,6 +701,30 @@ const App = () => {
                 <div className="flex items-start gap-2 p-3 bg-orange-100 text-orange-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <span><strong>New Labour Code Warning:</strong> Allowances exceed 50% of gross salary. This may impact PF calculation base under the new wage code</span>
+                </div>
+              )}
+              {results.warnings.tdsNotEnabledButTaxable && (
+                <div className="flex items-start gap-2 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span><strong>TDS Warning:</strong> Annual gross income (₹{(results.earnings.gross * 12).toLocaleString('en-IN')}) exceeds the taxable limit of ₹4,00,000. Consider enabling TDS calculation for accurate tax deduction.</span>
+                </div>
+              )}
+              {results.warnings.pfNotEnabledButMandatory && (
+                <div className="flex items-start gap-2 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span><strong>PF Mandatory:</strong> PF Base (Gross - HRA = ₹{(results.earnings.gross - results.earnings.hra).toLocaleString('en-IN')}) is ≤ ₹15,000. PF is MANDATORY for this salary range and must be enabled.</span>
+                </div>
+              )}
+              {results.warnings.pfNotEnabledButOptional && (
+                <div className="flex items-start gap-2 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span><strong>PF Optional:</strong> PF Base (Gross - HRA = ₹{(results.earnings.gross - results.earnings.hra).toLocaleString('en-IN')}) is > ₹15,000. PF is optional (not mandatory) for new joiners in this salary range, but may be enabled if required.</span>
+                </div>
+              )}
+              {results.warnings.esiNotEnabledButEligible && (
+                <div className="flex items-start gap-2 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span><strong>ESI Warning:</strong> Gross salary (₹{results.earnings.gross.toLocaleString('en-IN')}) is within ESI eligibility range (≤₹21,000). ESI is currently disabled but may be mandatory for this salary range.</span>
                 </div>
               )}
             </div>
@@ -908,7 +937,7 @@ const App = () => {
                     {results.tdsEnabled && results.tdsDetails && (
                       <div className="flex justify-between">
                         <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>TDS (Income Tax)</span>
-                        <span className="font-semibold">{formatCurrency(results.tdsDetails.annualTax)}</span>
+                        <span className="font-semibold">{formatCurrency(results.employeeDeductions.tds * 12)}</span>
                       </div>
                     )}
                     {!results.pfEnabled && !results.esiEnabled && !results.tdsEnabled && (
@@ -973,7 +1002,7 @@ const App = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Annual Tax (with Cess):</span>
-                      <span className="font-semibold text-red-600">{formatCurrency(results.tdsDetails.annualTax)}</span>
+                      <span className="font-semibold text-red-600">{formatCurrency(results.employeeDeductions.tds * 12)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Monthly TDS:</span>

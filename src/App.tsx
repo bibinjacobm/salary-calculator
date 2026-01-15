@@ -718,7 +718,7 @@ const App = () => {
               {results.warnings.pfNotEnabledButOptional && (
                 <div className="flex items-start gap-2 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span><strong>PF Optional:</strong> PF Base (Gross - HRA = ₹{(results.earnings.gross - results.earnings.hra).toLocaleString('en-IN')}) is > ₹15,000. PF is optional (not mandatory) for new joiners in this salary range, but may be enabled if required.</span>
+                  <span><strong>PF Optional:</strong> PF Base (Gross - HRA = ₹{(results.earnings.gross - results.earnings.hra).toLocaleString('en-IN')}) is &gt; ₹15,000. PF is optional (not mandatory) for new joiners in this salary range, but may be enabled if required.</span>
                 </div>
               )}
               {results.warnings.esiNotEnabledButEligible && (

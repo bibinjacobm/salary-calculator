@@ -455,7 +455,7 @@ const App = () => {
 
           <div class="footer">
             <p><strong>Note:</strong> This is a system-generated salary breakup based on Indian payroll standards and Jammu & Kashmir regulations.</p>
-            <p>CTC = Gross + Total Employer Cost | Basic = 51% of Gross (ensures >50% compliance) | HRA = 40% of Basic (J&K Non-Metro)</p>
+            <p>CTC = Gross + Total Employer Cost | Basic = 51% of Gross (ensures &gt;50% compliance) | HRA = 40% of Basic (J&K Non-Metro)</p>
             <p>EPF Admin & DLI = 0.5% each of (Gross - HRA), capped at ₹75 | Minimum Wage Check: Basic + Allowances (excluding HRA) must meet J&K wage standards</p>
           </div>
 

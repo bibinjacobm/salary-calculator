@@ -90,13 +90,26 @@ const App = () => {
     
     let gross = monthlyCTC / 1.15; // Initial estimate
     
-    // Iterate to get accurate gross
+    // Iterative calculation to find Gross from CTC
     for (let i = 0; i < 10; i++) {
       const basicTemp = gross * 0.51;
       const hraTemp = basicTemp * 0.4;
+      
+      // Calculate temporary TA to find the exact "Other Allowances" base
+      let taTemp = 0;
+      if (taEnabled) {
+        taTemp = Math.min(basicTemp * 0.15, 1600);
+      }
+      
+      // ESI Base = Basic + Other Allowances = Gross - HRA - TA
+      const esiBaseTemp = gross - hraTemp - taTemp;
+      
       const pfBase = gross - hraTemp;
       const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
-      const employerESI = (esiEnabled && gross <= 25000) ? gross * 0.0325 : 0;
+      
+      // Calculate ESI using the new base
+      const employerESI = (esiEnabled && gross <= 25000) ? esiBaseTemp * 0.0325 : 0;
+      
       const epfAdminCharges = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const dli = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const totalEmployerCost = employerPF + employerESI + epfAdminCharges + dli;
@@ -130,13 +143,15 @@ const App = () => {
     // Employer PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
     const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
     
-    // 7. ESI (Only if Gross ≤ ₹21,000 and ESI is enabled)
+    // 7. ESI (Only if Gross ≤ ₹25,000 and ESI is enabled)
+    // New Rule: Calculated on (Basic + Other Allowances)
     let employerESI = 0;
     let employeeESI = 0;
+    const esiBase = basic + otherAllowances;
     
     if (esiEnabled && gross <= 25000) {
-      employerESI = gross * 0.0325;
-      employeeESI = gross * 0.0075;
+      employerESI = esiBase * 0.0325;
+      employeeESI = esiBase * 0.0075;
     }
     
     // 8. EPF Admin Charges & DLI = 0.5% of (Gross - HRA) each (capped at ₹75) - only if PF is enabled
@@ -1063,7 +1078,7 @@ const App = () => {
             <li>• HRA: 40% of Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
-            <li>• ESI: Applicable only if Gross ≤ ₹25,000 (Employee: 0.75%, Employer: 3.25%)</li>
+            <li>• ESI: Calculated on (Basic + Other Allowances) if Gross ≤ ₹25,000 (Employee: 0.75%, Employer: 3.25%)</li>
             <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
           </ul>

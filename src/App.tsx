@@ -95,7 +95,7 @@ const App = () => {
       const hraTemp = basicTemp * 0.4;
       const pfBase = gross - hraTemp;
       const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
-      const employerESI = (esiEnabled && gross <= 21000) ? gross * 0.0325 : 0;
+      const employerESI = (esiEnabled && gross <= 25000) ? gross * 0.0325 : 0;
       const epfAdminCharges = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const dli = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const totalEmployerCost = employerPF + employerESI + epfAdminCharges + dli;
@@ -128,7 +128,7 @@ const App = () => {
     let employerESI = 0;
     let employeeESI = 0;
     
-    if (esiEnabled && gross <= 21000) {
+    if (esiEnabled && gross <= 25000) {
       employerESI = gross * 0.0325;
       employeeESI = gross * 0.0075;
     }
@@ -181,7 +181,7 @@ const App = () => {
       esiEnabled: esiEnabled,
       tdsEnabled: tdsEnabled,
       warnings: {
-        esiExceeded: gross > 21000,
+        esiExceeded: gross > 25000,
         pfCapped: pfEnabled && (pfBase * 0.12 > 1800),
         taCapped: taCalculated > 1600,
         epfAdminCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
@@ -190,7 +190,6 @@ const App = () => {
         basicTooHigh: basic > (gross * 0.51),
         hraIncorrect: hra !== (basic * 0.4),
         pfBaseIncorrect: pfBase !== (basic + otherAllowances),
-        esiLimit: esiEnabled && gross > 21000 && gross <= 25000,
         gratuityApplicable: monthlyCTC >= 15000,
         minimumWageCheck: wageForComparison < minWage,
         minimumWageAmount: minWage,
@@ -640,13 +639,7 @@ const App = () => {
               {results.warnings.esiExceeded && (
                 <div className="flex items-start gap-2 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Gross salary exceeds ₹21,000 - ESI not applicable</span>
-                </div>
-              )}
-              {results.warnings.esiLimit && (
-                <div className="flex items-start gap-2 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm">
-                  <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span><strong>New Labour Code Alert:</strong> ESI wage ceiling may be revised to ₹25,000. Current gross is between ₹21,000-₹25,000</span>
+                  <span>Gross salary exceeds ₹25,000 - ESI not applicable</span>
                 </div>
               )}
               {results.warnings.pfCapped && (
@@ -1047,7 +1040,7 @@ const App = () => {
             <li>• HRA: 40% of Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
-            <li>• ESI: Applicable only if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
+            <li>• ESI: Applicable only if Gross ≤ ₹25,000 (Employee: 0.75%, Employer: 3.25%)</li>
             <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
           </ul>
@@ -1064,7 +1057,7 @@ const App = () => {
                 <li>• <strong>Allowances Cap:</strong> Total allowances cannot exceed 50% of gross salary</li>
                 <li>• <strong>HRA Limit:</strong> 40% of Basic for Jammu & Kashmir (non-metro classification)</li>
                 <li>• <strong>PF Base:</strong> Calculated on Basic + Dearness Allowance (all allowances may be included)</li>
-                <li>• <strong>ESI Wage Ceiling:</strong> Current ₹21,000 (may be revised to ₹25,000)</li>
+                <li>• <strong>ESI Wage Ceiling:</strong> ₹25,000 (Updated as per New Labour Code standards)</li>
                 <li>• <strong>J&K Minimum Wages (Monthly):</strong>
                   <ul className="ml-4 mt-1">
                     <li>- Highly Skilled: ₹{minimumWages.HIGHLY_SKILLED.toLocaleString('en-IN')}</li>

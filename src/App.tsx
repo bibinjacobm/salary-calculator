@@ -10,6 +10,7 @@ const App = () => {
   const [includePF, setIncludePF] = useState(true);
   const [includeESI, setIncludeESI] = useState(true);
   const [includeTDS, setIncludeTDS] = useState(false);
+  const [includeTA, setIncludeTA] = useState(true); // Added TA state
   const [darkMode, setDarkMode] = useState(false);
   const [results, setResults] = useState(null);
 
@@ -72,7 +73,7 @@ const App = () => {
     };
   };
 
-  const calculateSalary = (inputCTC, type, selectedWageType, pfEnabled, esiEnabled, tdsEnabled) => {
+  const calculateSalary = (inputCTC, type, selectedWageType, pfEnabled, esiEnabled, tdsEnabled, taEnabled) => {
     if (!inputCTC || inputCTC <= 0) {
       setResults(null);
       return;
@@ -108,9 +109,14 @@ const App = () => {
     // 2. HRA = 40% of Basic (Jammu - Non-metro city as per new labour code)
     const hra = basic * 0.4;
     
-    // 3. TA = 15% of Basic (Max ₹1,600)
-    const taCalculated = basic * 0.15;
-    const ta = Math.min(taCalculated, 1600);
+    // 3. TA = 15% of Basic (Max ₹1,600) - Only if enabled
+    let taCalculated = 0;
+    let ta = 0;
+    
+    if (taEnabled) {
+      taCalculated = basic * 0.15;
+      ta = Math.min(taCalculated, 1600);
+    }
     
     // 5. Other Allowances
     const otherAllowances = gross - (basic + hra + ta);
@@ -180,10 +186,11 @@ const App = () => {
       pfEnabled: pfEnabled,
       esiEnabled: esiEnabled,
       tdsEnabled: tdsEnabled,
+      taEnabled: taEnabled,
       warnings: {
         esiExceeded: gross > 25000,
         pfCapped: pfEnabled && (pfBase * 0.12 > 1800),
-        taCapped: taCalculated > 1600,
+        taCapped: taEnabled && (taCalculated > 1600),
         epfAdminCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         dliCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
         basicTooLow: basic < (gross * 0.5),
@@ -206,10 +213,10 @@ const App = () => {
 
   useEffect(() => {
     if (ctc) {
-      const result = calculateSalary(parseFloat(ctc), calculationType, wageType, includePF, includeESI, includeTDS);
+      const result = calculateSalary(parseFloat(ctc), calculationType, wageType, includePF, includeESI, includeTDS, includeTA);
       setResults(result);
     }
-  }, [ctc, calculationType, wageType, includePF, includeESI, includeTDS]);
+  }, [ctc, calculationType, wageType, includePF, includeESI, includeTDS, includeTA]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -394,11 +401,13 @@ const App = () => {
               <td>${formatCurrency(results.earnings.hra)}</td>
               <td>${formatCurrency(results.earnings.hra * 12)}</td>
             </tr>
+            ${results.taEnabled ? `
             <tr>
               <td>Travel Allowance</td>
               <td>${formatCurrency(results.earnings.ta)}</td>
               <td>${formatCurrency(results.earnings.ta * 12)}</td>
             </tr>
+            ` : ''}
             <tr>
               <td>Other Allowances</td>
               <td>${formatCurrency(results.earnings.otherAllowances)}</td>
@@ -626,6 +635,16 @@ const App = () => {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
+                checked={includeTA}
+                onChange={(e) => setIncludeTA(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-medium">Include TA (Travel Allowance)</span>
+            </label>
+            
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
                 checked={includeTDS}
                 onChange={(e) => setIncludeTDS(e.target.checked)}
                 className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
@@ -744,10 +763,12 @@ const App = () => {
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>HRA</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.hra)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Travel Allowance</span>
-                      <span className="font-semibold">{formatCurrency(results.earnings.ta)}</span>
-                    </div>
+                    {results.taEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Travel Allowance</span>
+                        <span className="font-semibold">{formatCurrency(results.earnings.ta)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Other Allowances</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.otherAllowances)}</span>
@@ -854,10 +875,12 @@ const App = () => {
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>HRA</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.hra * 12)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Travel Allowance</span>
-                      <span className="font-semibold">{formatCurrency(results.earnings.ta * 12)}</span>
-                    </div>
+                    {results.taEnabled && (
+                      <div className="flex justify-between">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Travel Allowance</span>
+                        <span className="font-semibold">{formatCurrency(results.earnings.ta * 12)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Other Allowances</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.otherAllowances * 12)}</span>

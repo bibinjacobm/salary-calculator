@@ -214,10 +214,10 @@ const App = () => {
       }
     };
         // New warnings for statutory compliance
-        tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), // Annual income > 4L (taxable)
-        pfNotEnabledButMandatory: !pfEnabled && (pfBase <= 15000), // PF mandatory if PF Base (Gross - HRA) <= 15000
-        pfNotEnabledButOptional: !pfEnabled && (pfBase > 15000), // PF optional if PF Base > 15000
-        esiNotEnabledButEligible: !esiEnabled && (gross <= 21000) // ESI applicable if gross <= 21000
+          tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), 
+          pfNotEnabledButMandatory: !pfEnabled && (statutoryBase <= 15000), 
+          pfNotEnabledButOptional: !pfEnabled && (statutoryBase > 15000), 
+          esiNotEnabledButEligible: !esiEnabled && (gross <= 25000) // Updated to new 25k limit
       }
     };
   };

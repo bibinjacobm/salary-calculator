@@ -92,71 +92,64 @@ const App = () => {
     
     // Iterative calculation to find Gross from CTC
     for (let i = 0; i < 10; i++) {
-      const basicTemp = gross * 0.51;
-      const hraTemp = basicTemp * 0.4;
+      const totalBasicTemp = gross * 0.51;
+      const hraTemp = totalBasicTemp * 0.4;
       
-      // Calculate temporary TA to find the exact "Other Allowances" base
-      let taTemp = 0;
-      if (taEnabled) {
-        taTemp = Math.min(basicTemp * 0.15, 1600);
-      }
+      // New Rule: PF, ESI, DLI & EPF Admin are calculated on Total Basic Salary ONLY
+      const statutoryBaseTemp = totalBasicTemp;
       
-      // ESI Base = Basic + Other Allowances = Gross - HRA - TA
-      const esiBaseTemp = gross - hraTemp - taTemp;
+      const employerPF = pfEnabled ? Math.min(statutoryBaseTemp * 0.12, 1800) : 0;
       
-      const pfBase = gross - hraTemp;
-      const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
+      // ESI using Basic Salary as base
+      const employerESI = (esiEnabled && gross <= 25000) ? statutoryBaseTemp * 0.0325 : 0;
       
-      // Calculate ESI using the new base
-      const employerESI = (esiEnabled && gross <= 25000) ? esiBaseTemp * 0.0325 : 0;
+      const epfAdminCharges = pfEnabled ? Math.min(statutoryBaseTemp * 0.005, 75) : 0;
+      const dli = pfEnabled ? Math.min(statutoryBaseTemp * 0.005, 75) : 0;
       
-      const epfAdminCharges = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
-      const dli = pfEnabled ? Math.min((gross - hraTemp) * 0.005, 75) : 0;
       const totalEmployerCost = employerPF + employerESI + epfAdminCharges + dli;
       gross = monthlyCTC - totalEmployerCost;
     }
     
-    // 1. Basic Salary = 51% of Gross (to ensure compliance with new labour code requiring >50%)
-    const basic = gross * 0.51;
+    // 1. Total Basic Salary = 51% of Gross
+    const totalBasic = gross * 0.51;
     
-    // 2. HRA = 40% of Basic (Jammu - Non-metro city as per new labour code)
-    const hra = basic * 0.4;
+    // Bifurcation of Total Basic Salary
+    const da = totalBasic * 0.30; // 30% is Dearness Allowance
+    const basic = totalBasic * 0.70; // 70% is Core Basic
     
-    // 3. TA = 15% of Basic (Max ₹1,600) - Only if enabled
+    // 2. HRA = 40% of Total Basic
+    const hra = totalBasic * 0.4;
+    
+    // 3. TA = 15% of Total Basic (Max ₹1,600) - Only if enabled
     let taCalculated = 0;
     let ta = 0;
     
     if (taEnabled) {
-      taCalculated = basic * 0.15;
+      taCalculated = totalBasic * 0.15;
       ta = Math.min(taCalculated, 1600);
     }
     
     // 5. Other Allowances
-    const otherAllowances = gross - (basic + hra + ta);
+    const otherAllowances = gross - (totalBasic + hra + ta);
     
-    // 6. PF Base (Gross - HRA)
-    const pfBase = gross - hra;
+    // 6. Statutory Base (PF, ESI, EPF Admin, DLI) is now strictly Total Basic Salary
+    const statutoryBase = totalBasic;
     
-    // Employee PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
-    const employeePF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
+    const employeePF = pfEnabled ? Math.min(statutoryBase * 0.12, 1800) : 0;
+    const employerPF = pfEnabled ? Math.min(statutoryBase * 0.12, 1800) : 0;
     
-    // Employer PF = 12% of PF Base (Max ₹1,800) - only if PF is enabled
-    const employerPF = pfEnabled ? Math.min(pfBase * 0.12, 1800) : 0;
-    
-    // 7. ESI (Only if Gross ≤ ₹25,000 and ESI is enabled)
-    // New Rule: Calculated on (Basic + Other Allowances)
+    // 7. ESI
     let employerESI = 0;
     let employeeESI = 0;
-    const esiBase = basic + otherAllowances;
     
     if (esiEnabled && gross <= 25000) {
-      employerESI = esiBase * 0.0325;
-      employeeESI = esiBase * 0.0075;
+      employerESI = statutoryBase * 0.0325;
+      employeeESI = statutoryBase * 0.0075;
     }
     
-    // 8. EPF Admin Charges & DLI = 0.5% of (Gross - HRA) each (capped at ₹75) - only if PF is enabled
-    const epfAdminCharges = pfEnabled ? Math.min((gross - hra) * 0.005, 75) : 0;
-    const dli = pfEnabled ? Math.min((gross - hra) * 0.005, 75) : 0;
+    // 8. EPF Admin Charges & DLI
+    const epfAdminCharges = pfEnabled ? Math.min(statutoryBase * 0.005, 75) : 0;
+    const dli = pfEnabled ? Math.min(statutoryBase * 0.005, 75) : 0;
     
     // 9. Calculate TDS if enabled
     let tdsData = null;
@@ -172,12 +165,14 @@ const App = () => {
     // Get minimum wage for selected category
     const minWage = minimumWages[selectedWageType];
     
-    // For minimum wage check: Basic + Allowances (except HRA)
-    const wageForComparison = basic + ta + otherAllowances;
-    
+    // For minimum wage check
+    const wageForComparison = totalBasic + ta + otherAllowances;
+
     return {
       earnings: {
+        totalBasic: totalBasic,
         basic: basic,
+        da: da,
         hra: hra,
         ta: ta,
         otherAllowances: otherAllowances,
@@ -204,19 +199,20 @@ const App = () => {
       taEnabled: taEnabled,
       warnings: {
         esiExceeded: gross > 25000,
-        pfCapped: pfEnabled && (pfBase * 0.12 > 1800),
+        pfCapped: pfEnabled && (statutoryBase * 0.12 > 1800),
         taCapped: taEnabled && (taCalculated > 1600),
-        epfAdminCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
-        dliCapped: pfEnabled && ((gross - hra) * 0.005 > 75),
-        basicTooLow: basic < (gross * 0.5),
-        basicTooHigh: basic > (gross * 0.51),
-        hraIncorrect: hra !== (basic * 0.4),
-        pfBaseIncorrect: pfBase !== (basic + otherAllowances),
+        epfAdminCapped: pfEnabled && (statutoryBase * 0.005 > 75),
+        dliCapped: pfEnabled && (statutoryBase * 0.005 > 75),
+        basicTooLow: totalBasic < (gross * 0.5),
+        basicTooHigh: totalBasic > (gross * 0.51),
+        hraIncorrect: hra !== (totalBasic * 0.4),
         gratuityApplicable: monthlyCTC >= 15000,
         minimumWageCheck: wageForComparison < minWage,
         minimumWageAmount: minWage,
         wageCategory: selectedWageType,
-        actualWageAmount: wageForComparison,
+        actualWageAmount: wageForComparison
+      }
+    };
         // New warnings for statutory compliance
         tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), // Annual income > 4L (taxable)
         pfNotEnabledButMandatory: !pfEnabled && (pfBase <= 15000), // PF mandatory if PF Base (Gross - HRA) <= 15000
@@ -407,12 +403,20 @@ const App = () => {
               <th>Annual</th>
             </tr>
             <tr>
-              <td>Basic Salary</td>
+              <td>Basic (70% of Total Basic)</td>
               <td>${formatCurrency(results.earnings.basic)}</td>
               <td>${formatCurrency(results.earnings.basic * 12)}</td>
             </tr>
             <tr>
-              <td>HRA (40% of Basic)</td>
+              <td>Dearness Allowance (DA - 30%)</td>
+              <td>${formatCurrency(results.earnings.da)}</td>
+              <td>${formatCurrency(results.earnings.da * 12)}</td>
+            </tr>
+            <tr>
+              <td>HRA (40% of Total Basic)</td>
+              <td>${formatCurrency(results.earnings.hra)}</td>
+              <td>${formatCurrency(results.earnings.hra * 12)}</td>
+            </tr>
               <td>${formatCurrency(results.earnings.hra)}</td>
               <td>${formatCurrency(results.earnings.hra * 12)}</td>
             </tr>
@@ -771,8 +775,12 @@ const App = () => {
                   <h3 className="text-lg font-semibold mb-4 text-green-600">💰 Earnings</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic Salary</span>
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic (70%)</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.basic)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Dearness Allowance (DA - 30%)</span>
+                      <span className="font-semibold">{formatCurrency(results.earnings.da)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>HRA</span>
@@ -883,8 +891,12 @@ const App = () => {
                   <h3 className="text-lg font-semibold mb-4 text-green-600">💰 Earnings</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic Salary</span>
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic (70%)</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.basic * 12)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Dearness Allowance (DA - 30%)</span>
+                      <span className="font-semibold">{formatCurrency(results.earnings.da * 12)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>HRA</span>
@@ -1081,6 +1093,9 @@ const App = () => {
             <li>• ESI: Calculated on (Basic + Other Allowances) if Gross ≤ ₹25,000 (Employee: 0.75%, Employer: 3.25%)</li>
             <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
+            <li>• PF, ESI, DLI & EPF Admin: Calculated strictly on Total Basic Salary (Basic + DA)</li>
+            <li>• Basic Salary Bifurcation: 70% Core Basic, 30% Dearness Allowance (DA)</li>
+            <li>• HRA: 40% of Total Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
           </ul>
         </div>
 

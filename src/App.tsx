@@ -210,14 +210,12 @@ const App = () => {
         minimumWageCheck: wageForComparison < minWage,
         minimumWageAmount: minWage,
         wageCategory: selectedWageType,
-        actualWageAmount: wageForComparison
-      }
-    };
-        // New warnings for statutory compliance
-          tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), 
-          pfNotEnabledButMandatory: !pfEnabled && (statutoryBase <= 15000), 
-          pfNotEnabledButOptional: !pfEnabled && (statutoryBase > 15000), 
-          esiNotEnabledButEligible: !esiEnabled && (gross <= 25000) // Updated to new 25k limit
+        actualWageAmount: wageForComparison,
+        // New warnings for statutory compliance properly placed inside the object!
+        tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), 
+        pfNotEnabledButMandatory: !pfEnabled && (statutoryBase <= 15000), 
+        pfNotEnabledButOptional: !pfEnabled && (statutoryBase > 15000), 
+        esiNotEnabledButEligible: !esiEnabled && (gross <= 25000)
       }
     };
   };

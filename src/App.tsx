@@ -113,9 +113,10 @@ const App = () => {
     // 1. Total Basic Salary = 51% of Gross
     const totalBasic = gross * 0.51;
     
-    // Bifurcation of Total Basic Salary
-    const da = totalBasic * 0.30; // 30% is Dearness Allowance
-    const basic = totalBasic * 0.70; // 70% is Core Basic
+    // Bifurcation: Basic Pay = Basic + DA (where DA is 30% of Core Basic)
+    // Therefore: Total Basic Pay = Basic * 1.30
+    const basic = totalBasic / 1.30;
+    const da = basic * 0.30;
     
     // 2. HRA = 40% of Total Basic
     const hra = totalBasic * 0.4;
@@ -365,7 +366,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.80</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.85</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -401,12 +402,12 @@ const App = () => {
               <th>Annual</th>
             </tr>
             <tr>
-              <td>Basic (70% of Total Basic)</td>
+              <td>Basic</td>
               <td>${formatCurrency(results.earnings.basic)}</td>
               <td>${formatCurrency(results.earnings.basic * 12)}</td>
             </tr>
             <tr>
-              <td>Dearness Allowance (DA - 30%)</td>
+              <td>Dearness Allowance (30% of Basic)</td>
               <td>${formatCurrency(results.earnings.da)}</td>
               <td>${formatCurrency(results.earnings.da * 12)}</td>
             </tr>
@@ -516,7 +517,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.80</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.85</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -773,11 +774,11 @@ const App = () => {
                   <h3 className="text-lg font-semibold mb-4 text-green-600">💰 Earnings</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic (70%)</span>
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.basic)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Dearness Allowance (DA - 30%)</span>
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Dearness Allowance (30% of Basic)</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.da)}</span>
                     </div>
                     <div className="flex justify-between">
@@ -889,11 +890,11 @@ const App = () => {
                   <h3 className="text-lg font-semibold mb-4 text-green-600">💰 Earnings</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic (70%)</span>
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Basic</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.basic * 12)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Dearness Allowance (DA - 30%)</span>
+                      <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Dearness Allowance (30% of Basic)</span>
                       <span className="font-semibold">{formatCurrency(results.earnings.da * 12)}</span>
                     </div>
                     <div className="flex justify-between">
@@ -1092,7 +1093,7 @@ const App = () => {
             <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
             <li>• PF, ESI, DLI & EPF Admin: Calculated strictly on Total Basic Salary (Basic + DA)</li>
-            <li>• Basic Salary Bifurcation: 70% Core Basic, 30% Dearness Allowance (DA)</li>
+            <li>• Basic Pay Bifurcation: DA is 30% of Core Basic (Total Basic Pay = Basic + DA)</li>
             <li>• HRA: 40% of Total Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
           </ul>
         </div>

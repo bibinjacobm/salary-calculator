@@ -101,7 +101,7 @@ const App = () => {
       const employerPF = pfEnabled ? Math.min(statutoryBaseTemp * 0.12, 1800) : 0;
       
       // ESI using Basic Salary as base
-      const employerESI = (esiEnabled && gross <= 25000) ? statutoryBaseTemp * 0.0325 : 0;
+      const employerESI = (esiEnabled && gross <= 21000) ? statutoryBaseTemp * 0.0325 : 0;
       
       const epfAdminCharges = pfEnabled ? Math.min(statutoryBaseTemp * 0.005, 75) : 0;
       const dli = pfEnabled ? Math.min(statutoryBaseTemp * 0.005, 75) : 0;
@@ -142,7 +142,7 @@ const App = () => {
     let employerESI = 0;
     let employeeESI = 0;
     
-    if (esiEnabled && gross <= 25000) {
+    if (esiEnabled && gross <= 21000) {
       employerESI = statutoryBase * 0.0325;
       employeeESI = statutoryBase * 0.0075;
     }
@@ -198,7 +198,7 @@ const App = () => {
       tdsEnabled: tdsEnabled,
       taEnabled: taEnabled,
       warnings: {
-        esiExceeded: gross > 25000,
+        esiExceeded: gross > 21000,
         pfCapped: pfEnabled && (statutoryBase * 0.12 > 1800),
         taCapped: taEnabled && (taCalculated > 1600),
         epfAdminCapped: pfEnabled && (statutoryBase * 0.005 > 75),
@@ -215,7 +215,7 @@ const App = () => {
         tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), 
         pfNotEnabledButMandatory: !pfEnabled && (statutoryBase <= 15000), 
         pfNotEnabledButOptional: !pfEnabled && (statutoryBase > 15000), 
-        esiNotEnabledButEligible: !esiEnabled && (gross <= 25000)
+        esiNotEnabledButEligible: !esiEnabled && (gross <= 21000)
       }
     };
   };
@@ -365,7 +365,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.78</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.80</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -516,7 +516,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.78</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.80</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -675,7 +675,7 @@ const App = () => {
               {results.warnings.esiExceeded && (
                 <div className="flex items-start gap-2 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Gross salary exceeds ₹25,000 - ESI not applicable</span>
+                  <span>Gross salary exceeds ₹21,000 - ESI not applicable</span>
                 </div>
               )}
               {results.warnings.pfCapped && (
@@ -1088,7 +1088,7 @@ const App = () => {
             <li>• HRA: 40% of Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
             <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
             <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
-            <li>• ESI: Calculated on (Basic + Other Allowances) if Gross ≤ ₹25,000 (Employee: 0.75%, Employer: 3.25%)</li>
+            <li>• ESI: Calculated on (Basic + Other Allowances) if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
             <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
             <li>• Minimum Wages vary by skill category as per J&K standards</li>
             <li>• PF, ESI, DLI & EPF Admin: Calculated strictly on Total Basic Salary (Basic + DA)</li>
@@ -1108,7 +1108,7 @@ const App = () => {
                 <li>• <strong>Allowances Cap:</strong> Total allowances cannot exceed 50% of gross salary</li>
                 <li>• <strong>HRA Limit:</strong> 40% of Basic for Jammu & Kashmir (non-metro classification)</li>
                 <li>• <strong>PF Base:</strong> Calculated on Basic + Dearness Allowance (all allowances may be included)</li>
-                <li>• <strong>ESI Wage Ceiling:</strong> ₹25,000 (Updated as per New Labour Code standards)</li>
+                <li>• <strong>ESI Wage Ceiling:</strong> ₹21,000 (Updated as per New Labour Code standards)</li>
                 <li>• <strong>J&K Minimum Wages (Monthly):</strong>
                   <ul className="ml-4 mt-1">
                     <li>- Highly Skilled: ₹{minimumWages.HIGHLY_SKILLED.toLocaleString('en-IN')}</li>

@@ -100,8 +100,8 @@ const App = () => {
       
       const employerPF = pfEnabled ? Math.min(statutoryBaseTemp * 0.12, 1800) : 0;
       
-      // ESI using Basic Salary as base
-      const employerESI = (esiEnabled && gross <= 21000) ? statutoryBaseTemp * 0.0325 : 0;
+      // ESI using Total Basic Pay for both base and threshold limit
+      const employerESI = (esiEnabled && statutoryBaseTemp <= 21000) ? statutoryBaseTemp * 0.0325 : 0;
       
       const epfAdminCharges = pfEnabled ? Math.min(statutoryBaseTemp * 0.005, 75) : 0;
       const dli = pfEnabled ? Math.min(statutoryBaseTemp * 0.005, 75) : 0;
@@ -143,7 +143,7 @@ const App = () => {
     let employerESI = 0;
     let employeeESI = 0;
     
-    if (esiEnabled && gross <= 21000) {
+    if (esiEnabled && statutoryBase <= 21000) {
       employerESI = statutoryBase * 0.0325;
       employeeESI = statutoryBase * 0.0075;
     }
@@ -199,7 +199,7 @@ const App = () => {
       tdsEnabled: tdsEnabled,
       taEnabled: taEnabled,
       warnings: {
-        esiExceeded: gross > 21000,
+        esiExceeded: statutoryBase > 21000,
         pfCapped: pfEnabled && (statutoryBase * 0.12 > 1800),
         taCapped: taEnabled && (taCalculated > 1600),
         epfAdminCapped: pfEnabled && (statutoryBase * 0.005 > 75),
@@ -216,7 +216,7 @@ const App = () => {
         tdsNotEnabledButTaxable: !tdsEnabled && (gross * 12 > 400000), 
         pfNotEnabledButMandatory: !pfEnabled && (statutoryBase <= 15000), 
         pfNotEnabledButOptional: !pfEnabled && (statutoryBase > 15000), 
-        esiNotEnabledButEligible: !esiEnabled && (gross <= 21000)
+        esiNotEnabledButEligible: !esiEnabled && (statutoryBase <= 21000)
       }
     };
   };
@@ -366,7 +366,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.87</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.88</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -517,7 +517,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.87</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.88</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -676,7 +676,7 @@ const App = () => {
               {results.warnings.esiExceeded && (
                 <div className="flex items-start gap-2 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Gross salary exceeds ₹21,000 - ESI not applicable</span>
+                  <span>Total Basic Pay exceeds ₹21,000 - ESI not applicable</span>
                 </div>
               )}
               {results.warnings.pfCapped && (
@@ -1091,7 +1091,7 @@ const App = () => {
             <li>• <strong>Travel Allowance:</strong> 15% of Total Basic Pay (capped at ₹1,600), if enabled</li>
             <li>• <strong>Statutory Base:</strong> PF, ESI, DLI & EPF Admin are calculated strictly on Total Basic Pay</li>
             <li>• <strong>PF:</strong> 12% each for employee and employer (capped at ₹1,800)</li>
-            <li>• <strong>ESI:</strong> Applicable only if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
+            <li>• <strong>ESI:</strong> Applicable only if Total Basic Pay ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
             <li>• <strong>EPF Admin & DLI:</strong> 0.5% each of Statutory Base (capped at ₹75 each)</li>
             <li>• <strong>Minimum Wages:</strong> Checked against J&K skill category standards</li>
           </ul>

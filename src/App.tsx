@@ -166,8 +166,8 @@ const App = () => {
     // Get minimum wage for selected category
     const minWage = minimumWages[selectedWageType];
     
-    // For minimum wage check
-    const wageForComparison = totalBasic + ta + otherAllowances;
+    // For minimum wage check (Legally excludes HRA and Travel Allowance as per MW Act)
+    const wageForComparison = totalBasic + otherAllowances;
 
     return {
       earnings: {
@@ -366,7 +366,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.90</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.91</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -481,8 +481,9 @@ const App = () => {
 
           <div class="footer">
             <p><strong>Note:</strong> This is a system-generated salary breakup based on Indian payroll standards and Jammu & Kashmir regulations.</p>
-            <p>CTC = Gross + Total Employer Cost | Basic = 51% of Gross (ensures &gt;50% compliance) | HRA = 40% of Basic (J&K Non-Metro)</p>
-            <p>EPF Admin & DLI = 0.5% each of (Gross - HRA), capped at ₹75 | Minimum Wage Check: Basic + Allowances (excluding HRA) must meet J&K wage standards</p>
+            <p>CTC = Gross + Total Employer Cost | Total Basic Pay = 51% of Gross | HRA = 40% of Total Basic Pay (J&K Non-Metro)</p>
+            <p>Statutory Deductions (PF, ESI) are calculated strictly on Total Basic Pay.</p>
+            <p>Minimum Wage Check: (Total Basic Pay + Other Allowances) must meet J&K standards. HRA & TA are excluded as per MW Act, 1948.</p>
           </div>
 
           <div class="creator">Created by Bibin Jacob</div>
@@ -517,7 +518,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.90</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.91</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -718,7 +719,7 @@ const App = () => {
               {results.warnings.minimumWageCheck && (
                 <div className="flex items-start gap-2 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span><strong>J&K Minimum Wage Alert:</strong> Basic + Allowances (excluding HRA) = ₹{results.warnings.actualWageAmount.toFixed(0)} is below the minimum wage for {wageCategories.find(w => w.value === results.warnings.wageCategory)?.label} category (₹{results.warnings.minimumWageAmount}). Please ensure compliance with J&K minimum wage standards.</span>
+                  <span><strong>J&K Minimum Wage Alert:</strong> Total Basic + Allowances (excluding HRA & TA) = ₹{results.warnings.actualWageAmount.toFixed(0)} is below the minimum wage for the {wageCategories.find(w => w.value === results.warnings.wageCategory)?.label} category (₹{results.warnings.minimumWageAmount}). Ensure compliance.</span>
                 </div>
               )}
               {results.warnings.gratuityApplicable && (
@@ -1093,7 +1094,7 @@ const App = () => {
             <li>• <strong>PF:</strong> 12% each for employee and employer (capped at ₹1,800)</li>
             <li>• <strong>ESI:</strong> Applicable only if Total Basic Pay ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
             <li>• <strong>EPF Admin & DLI:</strong> 0.5% each of Statutory Base (capped at ₹75 each)</li>
-            <li>• <strong>Minimum Wages:</strong> Checked against J&K skill category standards</li>
+            <li>• <strong>Minimum Wage Check:</strong> Compared against J&K standards. Calculated as (Total Basic Pay + Other Allowances). HRA and TA are strictly excluded as per Sec 2(h) of the Minimum Wages Act.</li>
           </ul>
         </div>
 

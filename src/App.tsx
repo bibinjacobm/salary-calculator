@@ -366,7 +366,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.85</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.87</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -517,7 +517,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.85</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.87</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -703,10 +703,10 @@ const App = () => {
                   <span>DLI capped at ₹75 per month</span>
                 </div>
               )}
-              {(results.earnings.basic < results.earnings.gross * 0.5) && (
+              {(results.earnings.totalBasic < results.earnings.gross * 0.5) && (
                 <div className="flex items-start gap-2 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span><strong>New Labour Code Non-Compliance:</strong> Basic salary must be at least 50% of gross salary. Current: {((results.earnings.basic / results.earnings.gross) * 100).toFixed(1)}%</span>
+                  <span><strong>New Labour Code Non-Compliance:</strong> Total Basic Pay (Basic + DA) must be at least 50% of gross salary. Current: {((results.earnings.totalBasic / results.earnings.gross) * 100).toFixed(1)}%</span>
                 </div>
               )}
               {results.warnings.hraIncorrect && (
@@ -1084,17 +1084,16 @@ const App = () => {
         <div className={`${cardClasses} rounded-xl shadow-lg border p-6 mt-6`}>
           <h3 className="text-lg font-semibold mb-3">📋 Calculation Assumptions</h3>
           <ul className={`space-y-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            <li>• CTC = Gross + Total Employer Cost (Employer PF + Employer ESI + EPF Admin + DLI)</li>
-            <li>• Basic Salary: 51% of Gross (ensures compliance with &gt;50% requirement)</li>
-            <li>• HRA: 40% of Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
-            <li>• Travel Allowance: 15% of Basic (capped at ₹1,600)</li>
-            <li>• PF: 12% each for employee and employer (capped at ₹1,800)</li>
-            <li>• ESI: Calculated on (Basic + Other Allowances) if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
-            <li>• EPF Admin Charges & DLI: 0.5% each of (Gross - HRA) (capped at ₹75)</li>
-            <li>• Minimum Wages vary by skill category as per J&K standards</li>
-            <li>• PF, ESI, DLI & EPF Admin: Calculated strictly on Total Basic Salary (Basic + DA)</li>
-            <li>• Basic Pay Bifurcation: DA is 30% of Core Basic (Total Basic Pay = Basic + DA)</li>
-            <li>• HRA: 40% of Total Basic Salary (Jammu & Kashmir - Non-metro city standard)</li>
+            <li>• <strong>CTC Structure:</strong> CTC = Gross + Total Employer Cost (Employer PF + Employer ESI + EPF Admin + DLI)</li>
+            <li>• <strong>Total Basic Pay:</strong> Set to 51% of Gross (ensures compliance with &gt;50% New Labour Code requirement)</li>
+            <li>• <strong>Basic Pay Bifurcation:</strong> DA is 30% of Core Basic (Total Basic Pay = Basic + DA)</li>
+            <li>• <strong>HRA:</strong> 40% of Total Basic Pay (Jammu & Kashmir - Non-metro city standard)</li>
+            <li>• <strong>Travel Allowance:</strong> 15% of Total Basic Pay (capped at ₹1,600), if enabled</li>
+            <li>• <strong>Statutory Base:</strong> PF, ESI, DLI & EPF Admin are calculated strictly on Total Basic Pay</li>
+            <li>• <strong>PF:</strong> 12% each for employee and employer (capped at ₹1,800)</li>
+            <li>• <strong>ESI:</strong> Applicable only if Gross ≤ ₹21,000 (Employee: 0.75%, Employer: 3.25%)</li>
+            <li>• <strong>EPF Admin & DLI:</strong> 0.5% each of Statutory Base (capped at ₹75 each)</li>
+            <li>• <strong>Minimum Wages:</strong> Checked against J&K skill category standards</li>
           </ul>
         </div>
 

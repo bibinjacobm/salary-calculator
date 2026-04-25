@@ -14,12 +14,12 @@ const App = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [results, setResults] = useState(null);
 
-  // Jammu & Kashmir Minimum Wages (Monthly - as per latest standards)
+  // Jammu & Kashmir Minimum Wages (Monthly - as per latest Govt notification)
   const minimumWages = {
-    'HIGHLY_SKILLED': 12500,
-    'SKILLED': 11000,
-    'SEMI_SKILLED': 9500,
-    'UNSKILLED': 8500
+    'HIGHLY_SKILLED': 14352,
+    'SKILLED': 12558,
+    'SEMI_SKILLED': 10400,
+    'UNSKILLED': 8086
   };
 
   const wageCategories = [
@@ -207,7 +207,7 @@ const App = () => {
         basicTooLow: totalBasic < (gross * 0.5),
         basicTooHigh: totalBasic > (gross * 0.51),
         hraIncorrect: hra !== (totalBasic * 0.4),
-        gratuityApplicable: monthlyCTC >= 15000,
+        gratuityApplicable: true, // Gratuity applies to all roles, payable upon meeting service tenure
         minimumWageCheck: wageForComparison < minWage,
         minimumWageAmount: minWage,
         wageCategory: selectedWageType,
@@ -366,7 +366,7 @@ const App = () => {
           </style>
         </head>
         <body>
-          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.88</span></h1>
+          <h1>Salary Calculator <span style="font-size: 14px; color: #999;">v1.90</span></h1>
           <div class="subtitle">Indian Payroll Standard - CTC Breakup (Jammu & Kashmir)</div>
           
           <div class="info-section">
@@ -517,7 +517,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-10 h-10 text-indigo-600" />
             <div>
-              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.88</span></h1>
+              <h1 className="text-3xl font-bold">Salary Calculator <span className="text-sm text-gray-400">v1.90</span></h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Indian Payroll Standard - CTC Breakup
               </p>
@@ -724,7 +724,7 @@ const App = () => {
               {results.warnings.gratuityApplicable && (
                 <div className="flex items-start gap-2 p-3 bg-green-100 text-green-800 rounded-lg text-sm">
                   <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span><strong>Gratuity Applicable:</strong> Employee is eligible for gratuity benefits under the new labour code (minimum wage threshold met)</span>
+                  <span><strong>Gratuity Eligibility:</strong> Employee will be eligible for gratuity upon completion of 5 years of continuous service (or pro-rata for fixed-term).</span>
                 </div>
               )}
               {results.earnings.otherAllowances > (results.earnings.gross * 0.5) && (
@@ -1117,7 +1117,7 @@ const App = () => {
                     <li>- Unskilled: ₹{minimumWages.UNSKILLED.toLocaleString('en-IN')}</li>
                   </ul>
                 </li>
-                <li>• <strong>Gratuity:</strong> Applicable for all employees meeting minimum wage thresholds</li>
+                <li>• <strong>Gratuity:</strong> Applicable after 5 years of continuous service (or pro-rata for fixed-term employees)</li>
               </ul>
             </div>
             <div className="pt-3 border-t">
